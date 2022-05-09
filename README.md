@@ -21,3 +21,15 @@ This dataset was studied in
 "Comparison of Machine Learning Algorithms for the Power Consumption Prediction:-Case Study of Tetouan city",
 Salam, A., & El Hibaoui, A. (2018, December), in 2018 6th International Renewable and Sustainable 
 Energy Conference (IRSEC), IEEE (Institute of Electrical and Electronics Engineers).
+
+### Goals and Objectives
+
+Our goal for this project is to analyze and model the time series data with a minimum
+of four forecasting models. Based on our selection crtieria, forecasting metrics, and accuracy, we will make note of the best performing model. We will evaluate our models, data,
+and discuss how our model forecasting can be improved as needed.
+
+Our data drives at an important problem statement in today's methods for forecasting load
+in modern electric grids. Accurate forecasts of load can be used to proactively perform network switching, which results in alleviating current overloads. Alleviating current overloads can lead to:
+
+* Longer shelf life of expensive and difficult to procure electric equipment in our grids, including transformers, breakers, switches, fuses, capacitors, and electric lines; and
+*  Reduced count and duration of of power outages
