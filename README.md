@@ -4,6 +4,7 @@ This repository contains source code and materials used to model power consumpti
 time series data from Teotuan City, Morocco. This project was completed as required
 in the MSCA 31006: "Time Series Analysis & Forecasting" course at the University of Chicago
 
+
 ### Data
 
 The selected time series dataset was obtained from the University of California, Irvine's Machine Learning data repository
@@ -21,6 +22,7 @@ This dataset was studied in
 "Comparison of Machine Learning Algorithms for the Power Consumption Prediction:-Case Study of Tetouan city",
 Salam, A., & El Hibaoui, A. (2018, December), in 2018 6th International Renewable and Sustainable 
 Energy Conference (IRSEC), IEEE (Institute of Electrical and Electronics Engineers).
+
 
 ### Goals and Objectives
 
