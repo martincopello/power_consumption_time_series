@@ -1,0 +1,36 @@
+---
+title: "EDA Notebook"
+output: html_notebook
+---
+
+```{r}
+
+```
+
+```{r}
+library(corrplot)
+```
+
+```{r}
+df <- read.csv("Tetuan City power consumption.csv")
+head(df)
+
+```
+
+```{r}
+df$DateTime <- as.POSIXct(df$DateTime,format="%m/%d/%Y %H:%M")
+plot(df$DateTime, df$Zone.1.Power.Consumption, , ylab = "Monthly power consumption in zone 1", xlab = "2017" , main = "Tetoun City monthly power consumption in 2017", lwd=0.5, type="l")
+```
+
+```{r}
+corrplot(cor(df[,2:7]), title = "Corrplot")
+```
+
+```{r}
+acf(df$Zone.1.Power.Consumption)
+pacf(df$Zone.1.Power.Consumption)
+```
+
+```{r}
+
+```
