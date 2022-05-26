@@ -41,10 +41,13 @@ in modern electric grids. Accurate forecasts of load can be used to proactively 
 
 As we performed exploratory data analysis to gain an understanding of our data, we developed a list of time series models that fit the criteria of being usable in forecasting a dataset as ours (e.g., seasonality). As such, we implemented the following time series models:
 
-* Auto ARIMA
-* Holt Winters with Exponential Smoothing
-* Long Short Term Memory (LSTM)
+* Linear Regression
+* Linear with ARIMA
+* Holt Winters with Exponential Smoothing 
+* STLF
 * Prophet
+* Tbats
+* Long Short Term Memory (LSTM)
 
 
 ### About Us
