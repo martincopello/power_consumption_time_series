@@ -1,0 +1,119 @@
+---
+title: "Holt-Winters Implementation of Tetuan City Power Consumption Forecasting"
+author: "Martin Copello"
+date: "5/12/2022"
+output: html_document
+---
+
+Import libraries and read/clean data
+
+```{r 1}
+library(lubridate)
+library(forecast)
+library(xts)
+library(dplyr)
+library(stats)
+library(reshape2)
+library(ggplot2)
+library(Metrics)
+library(tsbox)
+library(quantmod)
+
+df <- read.csv("Tetuan City power consumption.csv")
+head(df)
+df$DateTime <- as.POSIXct(df$DateTime, format = "%m/%d/%Y %H:%M")
+cbind(
+   lapply(
+     lapply(df, is.na)
+     , sum)
+   )
+df <- na.omit(df)
+keeps <- c("DateTime", "Zone.1.Power.Consumption")
+df <- df[keeps]
+ts <- xts(df$Zone.1.Power.Consumption, order.by = df$DateTime)
+plot(ts)
+```
+
+
+```{r 2}
+acf(df)
+```
+
+
+```{r 3}
+df <- read.csv("Tetuan City power consumption.csv")
+date <- seq(from=as.POSIXct("2017-01-01 00:00", format = "%Y-%m-%d %H:%M"), length.out = nrow(df), by = "10 min") 
+df <- xts(df[,7], date) 
+train <- df['2017-01-01/2017-12-29']
+test <- df['2017-12-30']
+plot(df)
+plot(train)
+plot(test)
+```
+
+```{r 4}
+#Train on train data to forecast on one day (12/30/2017)
+start.time <- Sys.time()
+
+hw <- HoltWinters(ts(train, frequency = 144), gamma = TRUE, beta = FALSE, seasonal = "additive")
+summary(hw)
+
+pred_hw <- forecast(hw, nrow(test))$mean
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+pred_hw_df <- data.frame(hours = index(test), test_val = test[,1], pred_val = pred_hw)
+d <- melt(pred_hw_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+
+smape(xts(pred_hw_df$pred_val, order.by = pred_hw_df$hours), test)
+time.taken
+```
+
+```{r 5}
+#Train on data to forecast on one month (December 2017)
+
+train_month <- df['2017-01-01/2017-11-30']
+test_month <- df['2017-12-01/2017-12-30']
+
+hw <- HoltWinters(ts(train_month, frequency = 144), gamma = TRUE, beta = FALSE, seasonal = "additive")
+
+pred_hw_month <- forecast(hw, nrow(test_month))$mean
+
+pred_hw_month_df <- data.frame(hours = index(test_month), test_val = test_month[,1], pred_val = pred_hw_month)
+d <- melt(pred_hw_month_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+
+smape(xts(pred_hw_month_df$pred_val, order.by = pred_hw_month_df$hours), test)
+```
+
+
+```{r 6}
+
+#Train on data to forecast on one week (Week of 12/23/2017)
+
+train_month <- df['2017-01-01/2017-12-23']
+test_month <- df['2017-12-24/2017-12-30']
+start.time <- Sys.time()
+
+hw <- HoltWinters(ts(train_month, frequency = 144*7), gamma = TRUE, beta = FALSE, seasonal = "additive")
+
+pred_hw_month <- forecast(hw, nrow(test_month))$mean
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+pred_hw_month_df <- data.frame(hours = index(test_month), test_val = test_month[,1], pred_val = pred_hw_month)
+d <- melt(pred_hw_month_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+
+smape(xts(pred_hw_month_df$pred_val, order.by = pred_hw_month_df$hours), test)
+time.taken
+```
