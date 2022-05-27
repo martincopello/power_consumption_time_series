@@ -49,7 +49,7 @@ As we performed exploratory data analysis to gain an understanding of our data, 
 * Tbats
 * Long Short Term Memory (LSTM)
 
-
+Please refer to the 'Models' folder for our scripts, and refer to our Presentation Slides for additional insights.
 ### About Us
 
 Our team is comprised of Martin Copello, Kartik Garg, Maya Zhao, and David Wen. We are students of the University of Chicago MScA program, and this project was completed in fulfillment of the requirements of the program's Time Series Analysis and Forecasting course.
