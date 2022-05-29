@@ -1,0 +1,194 @@
+---
+title: "linear_model"
+author: "Kartik Garg"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, warning=FALSE, message=FALSE}
+library(TSA, warn.conflicts = FALSE)
+library(forecast)
+library(Metrics)
+library(gdata)
+library(readxl)
+library(tseries)
+library(dplyr)
+library(reshape)
+library(ggplot2)
+```
+
+## Linear Model on Tetuan City power consumption
+
+```{r}
+df <- read.csv("Tetuan City power consumption.csv")
+head(df)
+```
+
+### Feature Engineering and additional EDA
+
+Based on the 00EDA, we look at what features can we add for the linear model
+
+Adding hour and day of the week from the DateTime as an independent variable for our model
+
+```{r}
+library(lubridate)
+df$DateTime <- as.POSIXct(df$DateTime,format="%m/%d/%Y %H:%M")
+df <- df[complete.cases(df), ]
+df$hour <- as.integer(format(as.POSIXct(df$DateTime,format="%H:%M:%S"),"%H"))
+df$dow <-as.integer(wday(df$DateTime))
+```
+
+```{r}
+head(df)
+```
+```{r}
+tail(df)
+```
+
+EDA
+
+```{r}
+library(corrplot)
+corrplot(cor(df[,2:11]), title = "Correlation Plot")
+```
+
+
+Splitting our datainto train and test
+
+```{r}
+train<-df[df$DateTime >= "2017-01-01" & df$DateTime < "2017-12-01",]
+train<-train[complete.cases(train), ]
+tail(train)
+```
+
+```{r}
+test <- df[df$DateTime >= "2017-12-01",]
+test<-test[complete.cases(test), ]
+tail(test)
+```
+
+## Linear Model 
+
+#### 1. Using Temperature
+
+Here we model using only Temprature as independent variable to get a baseline for our model performance.
+
+y = Zone.1.Power.Consumption
+x = Temperature
+
+```{r warning=FALSE}
+start_time <- Sys.time()
+m1 <- lm(Zone.1.Power.Consumption~Temperature, train)
+end_time <- Sys.time()
+end_time - start_time
+
+
+summary(m1)
+```
+Model forecasting
+
+```{r}
+lm_preds1 <- forecast(m1, test)
+lm_preds1 <- data.frame(lm_preds1)
+pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=lm_preds1$Point.Forecast)
+d<- melt(pred_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+```
+
+
+```{r}
+smape(test$Zone.1.Power.Consumption,lm_preds1$Point.Forecast) 
+rmse(test$Zone.1.Power.Consumption,lm_preds1$Point.Forecast) 
+```
+This will set a baseline for us to build upon
+
+### Using Temperature & hour
+
+y = Zone.1.Power.Consumption
+x = Temperature & hour
+
+```{r warning=FALSE}
+start_time <- Sys.time()
+m1 <- lm(Zone.1.Power.Consumption~Temperature+hour, train)
+end_time <- Sys.time()
+end_time - start_time
+
+summary(m1)
+```
+Model forecasting
+
+```{r}
+lm_preds2 <- forecast(m1, test)
+lm_preds2 <- data.frame(lm_preds2)
+pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=lm_preds2$Point.Forecast)
+d<- melt(pred_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+```
+
+
+```{r}
+smape(test$Zone.1.Power.Consumption,lm_preds2$Point.Forecast) 
+rmse(test$Zone.1.Power.Consumption,lm_preds2$Point.Forecast) 
+```
+### Using Temperature, hour and dow
+
+y = Zone.1.Power.Consumption
+x = Temperature & hour
+
+```{r warning=FALSE}
+start_time <- Sys.time()
+m1 <- lm(Zone.1.Power.Consumption~Temperature+hour+dow, train)
+end_time <- Sys.time()
+end_time - start_time
+
+summary(m1)
+```
+Model forecasting
+
+```{r}
+lm_preds3 <- forecast(m1, test)
+lm_preds3 <- data.frame(lm_preds3)
+pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=lm_preds3$Point.Forecast)
+d<- melt(pred_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+```
+
+
+```{r}
+smape(test$Zone.1.Power.Consumption,lm_preds3$Point.Forecast) 
+rmse(test$Zone.1.Power.Consumption,lm_preds3$Point.Forecast) 
+```
+
+
+## Evaluation
+
+```{r}
+Models <- c("Linear regression on temp", "Linear regression on temp and hour",
+            "Linear regression on temp, hour and dow")
+
+sMAPE <- c(smape(test$Zone.1.Power.Consumption,lm_preds1$Point.Forecast),
+smape(test$Zone.1.Power.Consumption,lm_preds2$Point.Forecast),
+smape(test$Zone.1.Power.Consumption,lm_preds3$Point.Forecast))
+
+RMSE <- c(rmse(test$Zone.1.Power.Consumption,lm_preds1$Point.Forecast),
+rmse(test$Zone.1.Power.Consumption,lm_preds2$Point.Forecast),
+rmse(test$Zone.1.Power.Consumption,lm_preds3$Point.Forecast))
+
+res.df<- data.frame(Models, sMAPE, RMSE)
+res.df
+```
+
+Based on the results we can see that the best model is the one with temp and hour
+

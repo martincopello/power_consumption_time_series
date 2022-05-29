@@ -1,0 +1,154 @@
+---
+title: "tbats_model"
+author: "Kartik Garg"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, warning=FALSE, message=FALSE}
+library(TSA, warn.conflicts = FALSE)
+library(forecast)
+library(Metrics)
+library(gdata)
+library(readxl)
+library(tseries)
+library(dplyr)
+library(reshape)
+library(ggplot2)
+```
+
+## TBATS Model on Tetuan City power consumption
+
+```{r}
+df <- read.csv("Tetuan City power consumption.csv")
+head(df)
+```
+
+Splitting into train and test
+
+```{r}
+df$DateTime <- as.POSIXct(df$DateTime,format="%m/%d/%Y %H:%M")
+df2<-df[df$DateTime >= "2017-01-01" & df$DateTime < "2017-12-01",]
+df2<-df2[complete.cases(df2), ]
+history <- data.frame(ds = df2$DateTime, y = df2$Zone.1.Power.Consumption)
+tail(history)
+```
+
+```{r}
+test <- df[df$DateTime >= "2017-12-01",]
+test<-test[complete.cases(test), ]
+```
+
+
+## TBATS with varying seasonality
+
+
+We will build the model with varying seasonalities and cross check the results
+
+### Daily
+
+```{r}
+start_time <- Sys.time()
+m1 <- auto.arima(ts(history$y, frequency = 144))
+end_time <- Sys.time()
+end_time - start_time
+```
+
+
+```{r}
+start_time <- Sys.time()
+m1 <- tbats(ts(history$y, frequency = 144), seasonal.periods = 144)
+end_time <- Sys.time()
+end_time - start_time
+
+comp <-tbats.components(m1)
+plot(comp)
+```
+
+seasonal components for the daily seasonality model
+
+```{r}
+tbats_preds1 <- forecast(m1, h=nrow(test))
+plot(tbats_preds1)
+```
+
+Let's plot same with our test data and check the results now
+
+
+```{r}
+tbats_preds1 <- data.frame(tbats_preds1)
+pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=tbats_preds1$Point.Forecast)
+d<- melt(pred_df, id.vars = "hours")
+
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+```
+
+Looks very accurate!
+
+
+```{r}
+smape(test$Zone.1.Power.Consumption,tbats_preds1$Point.Forecast) 
+rmse(test$Zone.1.Power.Consumption,tbats_preds1$Point.Forecast) 
+```
+Great results for sMAPE and RMSE
+
+### Weekly
+
+```{r}
+start_time <- Sys.time()
+m1 <- tbats(ts(history$y, frequency = 144*7), seasonal.periods = 144*7)
+end_time <- Sys.time()
+end_time - start_time
+
+comp <-tbats.components(m1)
+plot(comp)
+```
+
+These are the seasonal components for the weekly seasonality model
+
+
+```{r}
+tbats_preds2 <- forecast(m1, h=nrow(test))
+plot(tbats_preds2)
+```
+
+Not too bad, let's check it with our test data
+
+```{r}
+tbats_preds2 <- data.frame(tbats_preds2)
+pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=tbats_preds2$Point.Forecast)
+d<- melt(pred_df, id.vars = "hours")
+pred_df
+ggplot(d, aes(x=hours, y=value, color=variable)) + 
+  geom_point(size=1) + 
+  geom_line()
+```
+
+```{r}
+
+smape(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast)
+rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast)
+```
+
+## Evaluation
+
+Let's analyze the results
+
+```{r}
+Models <- c("Model daily", "Model weekly")
+
+sMAPE <- c(smape(test$Zone.1.Power.Consumption,tbats_preds1$Point.Forecast),
+smape(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast))
+
+RMSE <- c(rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast),
+rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast))
+
+res.df<- data.frame(Models, sMAPE, RMSE)
+res.df
+```
+From the results of the model we can see that the daily model outperforms the weekly model
