@@ -130,8 +130,10 @@ fit_daily$model
 time_end <- Sys.time()
 ```
 
-
-
+### check residuals
+```{r}
+checkresiduals(fit_daily)
+```
 
 
 ```{r}
@@ -167,6 +169,12 @@ fit_weekly = stlf(ts(train_weekly,frequency = 6*24*52))
 fit_weekly$model
 time_end <- Sys.time()
 ```
+
+### check residuals
+```{r}
+checkresiduals(fit_weekly)
+```
+
 
 ```{r}
 pred_weekly <- forecast(fit_weekly, h=nrow(test_weekly))
@@ -249,7 +257,7 @@ Metrics::rmse(pred_df_monthly$pred_val, test_monthly)
 ```
 
 
-
+## Based on sMAPE, the best performing model is in daily frequency.
 
 
 
