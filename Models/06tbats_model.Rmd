@@ -123,7 +123,6 @@ Not too bad, let's check it with our test data
 tbats_preds2 <- data.frame(tbats_preds2)
 pred_df <- data.frame(hours=test$DateTime, test_val=test$Zone.1.Power.Consumption, pred_val=tbats_preds2$Point.Forecast)
 d<- melt(pred_df, id.vars = "hours")
-pred_df
 ggplot(d, aes(x=hours, y=value, color=variable)) + 
   geom_point(size=1) + 
   geom_line()
@@ -135,6 +134,7 @@ smape(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast)
 rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast)
 ```
 
+
 ## Evaluation
 
 Let's analyze the results
@@ -145,7 +145,7 @@ Models <- c("Model daily", "Model weekly")
 sMAPE <- c(smape(test$Zone.1.Power.Consumption,tbats_preds1$Point.Forecast),
 smape(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast))
 
-RMSE <- c(rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast),
+RMSE <- c(rmse(test$Zone.1.Power.Consumption,tbats_preds1$Point.Forecast),
 rmse(test$Zone.1.Power.Consumption,tbats_preds2$Point.Forecast))
 
 res.df<- data.frame(Models, sMAPE, RMSE)

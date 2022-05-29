@@ -38,6 +38,7 @@ library(lubridate)
 df$DateTime <- as.POSIXct(df$DateTime,format="%m/%d/%Y %H:%M")
 df <- df[complete.cases(df), ]
 df$hour <- as.integer(format(as.POSIXct(df$DateTime,format="%H:%M:%S"),"%H"))
+df$minute <- as.integer(format(as.POSIXct(df$DateTime,format="%H:%M:%S"),"%M"))
 df$dow <-as.integer(wday(df$DateTime))
 ```
 
@@ -52,7 +53,7 @@ EDA
 
 ```{r}
 library(corrplot)
-corrplot(cor(df[,2:11]), title = "Correlation Plot")
+corrplot(cor(df[,2:12]), title = "Correlation Plot")
 ```
 
 
