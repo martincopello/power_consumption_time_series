@@ -1,0 +1,108 @@
+---
+title: "LR with ARMA errors"
+author: "Maya Zhao"
+date: '2022-05-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls()) #initialization
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(lubridate)
+library(forecast)
+library(xts)
+library(zoo)
+library(Metrics)
+library(ggplot2)
+library(gplots)
+```
+
+```{r}
+# read the real data on July 1 for test
+df <- read.csv("Tetuan City power consumption.csv")
+colnames(df)
+```
+
+
+
+```{r}
+colnames(df)[7] <- "Zone1"
+colnames(df)[8] <- "Zone2"
+colnames(df)[9] <- "Zone3"
+```
+
+
+```{r}
+date <- seq(from=as.POSIXct("2017-01-01 00:00", format = "%Y-%m-%d %H:%M"), length.out = nrow(df), by = "10 min")
+df$DateTime <- date #df(df$DateTime, format="%m/%d/%Y %H:%M")
+#attr(df$DateTime, "tzone") <- "Africa/Casablanca"
+
+df$year <- year(df$DateTime)
+df$month <- month(df$DateTime)
+df$week <- week(df$DateTime)
+df$day <- day(df$DateTime)
+df$hour <- hour(df$DateTime)
+df$minute <- minute(df$DateTime)
+df$wday <- lubridate::wday(df$DateTime)
+```
+
+
+
+## Linear regression with ARMA errors (use arima with xreg)
+
+### test: daily data
+```{r}
+train_er <- df[1:(nrow(df)-6*24),]
+test_er <- df[(nrow(df)-6*24+1):nrow(df),]
+```
+
+```{r}
+time_sta <- Sys.time()
+temp_xreg <- as.matrix(train_er[,c("Temperature","hour","minute","wday")])
+lm_model <- forecast::auto.arima(train_er$Zone1, xreg=temp_xreg)
+lm_model
+time_end <- Sys.time()
+```
+```{r}
+temp_xreg <- as.matrix(test_er[,c("Temperature","hour","minute","wday")])
+lm_res <- forecast(lm_model,h=nrow(test_er),xreg = temp_xreg)$mean
+```
+
+```{r}
+pred_lm_monthly <- data.table(time=test_er$DateTime, test_val=test_er$Zone1, pred_val=lm_res)
+d <- melt(pred_lm_monthly, id.vars = "time")
+p <- ggplot(d, aes(x=time, y=value, color=variable)) + geom_point(size=1) + geom_line()
+p + labs(title="Zone 1 Power Consumption: monthly",
+        x ="Time", y = "Watt Hours")
+```
+
+
+```{r}
+smape(lm_res, test_er$Zone1)
+time1 <- time_end-time_sta
+time1
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
