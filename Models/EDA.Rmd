@@ -1,36 +1,129 @@
 ---
-title: "EDA Notebook"
-output: html_notebook
+title: "EDA"
+author: "Maya Zhao"
+date: '2022-05-25'
+output: html_document
 ---
 
-```{r}
+Attribute Information:
 
+Date Time: Each ten minutes.
+Temperature: Weather Temperature of Tetouan city.
+Humidity: Weather Humidity of Tetouan city.
+Wind Speed of Tetouan city.
+general diffuse flows
+diffuse flows
+power consumption of zone 1 of Tetouan city.
+power consumption of zone 2 of Tetouan city.
+power consumption of zone 3 of Tetouan city.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width=15, fig.height=8)
 ```
 
 ```{r}
-library(corrplot)
+rm(list = ls()) #initialization
+```
+
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(lubridate)
+library(forecast)
+library(xts)
+library(zoo)
+library(Metrics)
+library(ggplot2)
+library(gplots)
+library(RColorBrewer)
 ```
 
 ```{r}
+# read the real data on July 1 for test
 df <- read.csv("Tetuan City power consumption.csv")
-head(df)
-
+colnames(df)
 ```
 
 ```{r}
-df$DateTime <- as.POSIXct(df$DateTime,format="%m/%d/%Y %H:%M")
-plot(df$DateTime, df$Zone.1.Power.Consumption, , ylab = "Monthly power consumption in zone 1", xlab = "2017" , main = "Tetoun City monthly power consumption in 2017", lwd=0.5, type="l")
+# check for missing values
+sum(is.na(df$Zone1))
+```
+
+
+```{r}
+colnames(df)[7] <- "Zone1"
+colnames(df)[8] <- "Zone2"
+colnames(df)[9] <- "Zone3"
+date <- seq(from=as.POSIXct("2017-01-01 00:00", format = "%Y-%m-%d %H:%M"), length.out = nrow(df), by = "10 min")
+df$DateTime <- date #df(df$DateTime, format="%m/%d/%Y %H:%M")
+#attr(df$DateTime, "tzone") <- "Africa/Casablanca"
+df_xts <- xts(df[,7], date) 
+```
+
+
+
+## EDA
+
+### check stationarity 
+```{r}
+# ts plot and acf plot
+var = colnames(df)
+var = var[-1]
+for(i in var) {       
+  ts.plot(df[[i]], ylab=i)
+  acf(df[[i]], ylab = paste0(i," ACF"), main="")
+}
+```
+
+
+
+```{r}
+library(tseries)
+for(i in var) {       
+  print(adf.test(df[[i]])) # detects stationarity
+  print(kpss.test(df[[i]],null = "Trend")) # detects trend stationarity
+}
+```
+
+
+```{r}
+plot(df$Zone1, type = "l", xlab = "Time", ylab = "Watt Hours", main = "Power Consumption of Tetouan City", col = "#4F94CD")
+lines(df$Zone2, col = "#708090")
+lines(df$Zone3, col = "#EEE5DE")
+
+legend("topleft", c("Zone 1", "Zone 2","Zone 3"),
+       lty = c(1,1),
+       col = c("#4F94CD","#708090", "#EEE5DE"))
+
+```
+
+
+### Correlation
+```{r}
+cor_df <- df[, c(2,3,4,5,6,7)]
+cor_mat <- round(cor(cor_df),2)
+heatmap.2(cor_mat,Colv=NA,Rowv=NA,col=brewer.pal(9,"Blues"),cellnote=cor_mat,notecol="white", na.color=par("bg"),trace='none',density.info='none', margins = c(5, 5),cexRow=0.5,cexCol=0.5)
+```
+```{r}
+comp_daily <- decompose(ts(df$Zone1,frequency = 6*24))
+plot(comp_daily)
+```
+```{r}
+comp_weekly <- decompose(ts(df$Zone1,frequency = 6*24*7))
+plot(comp_weekly)
 ```
 
 ```{r}
-corrplot(cor(df[,2:7]), title = "Corrplot")
+plot(df_xts['2017-01-01/2017-01-07'], type = "l", xlab = "Time", ylab = "Watt Hours", main = "One Week of Power Consumption of Zone 1 of Tetouan City ", col = "#4F94CD")
+```
+```{r}
+plot(df_xts['2017-01-01'], type = "l", xlab = "Time", ylab = "Watt Hours", main = "One Day of Power Consumption of Zone 1 of Tetouan City ", col = "#4F94CD")
 ```
 
 ```{r}
-acf(df$Zone.1.Power.Consumption)
-pacf(df$Zone.1.Power.Consumption)
+plot(df_xts['2017-01-01/2017-01-30'], type = "l", xlab = "Time", ylab = "Watt Hours", main = "One Month of Power Consumption of Zone 1 of Tetouan City ", col = "#4F94CD")
 ```
 
-```{r}
-
-```
