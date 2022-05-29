@@ -59,48 +59,126 @@ df$wday <- lubridate::wday(df$DateTime)
 
 ### test: daily data
 ```{r}
-train_er <- df[1:(nrow(df)-6*24),]
-test_er <- df[(nrow(df)-6*24+1):nrow(df),]
+train_er <- df[1:(nrow(df)-6*24*30),]
+test_er <- df[(nrow(df)-6*24*30+1):nrow(df),]
 ```
 
+
+### Using "Temperature"
 ```{r}
 time_sta <- Sys.time()
-temp_xreg <- as.matrix(train_er[,c("Temperature","hour","minute","wday")])
-lm_model <- forecast::auto.arima(train_er$Zone1, xreg=temp_xreg)
-lm_model
+temp_xreg <- as.matrix(train_er[,c("Temperature")])
+reg_model1 <- forecast::auto.arima(train_er$Zone1, xreg=temp_xreg)
+reg_model1
 time_end <- Sys.time()
 ```
 ```{r}
-temp_xreg <- as.matrix(test_er[,c("Temperature","hour","minute","wday")])
-lm_res <- forecast(lm_model,h=nrow(test_er),xreg = temp_xreg)$mean
+temp_xreg <- as.matrix(test_er[,c("Temperature")])
+res1 <- forecast(reg_model1,h=nrow(test_er),xreg = temp_xreg)$mean
 ```
 
+
 ```{r}
-pred_lm_monthly <- data.table(time=test_er$DateTime, test_val=test_er$Zone1, pred_val=lm_res)
-d <- melt(pred_lm_monthly, id.vars = "time")
+checkresiduals(reg_model1)
+```
+
+
+```{r}
+pred_reg <- data.table(time=test_er$DateTime, test_val=test_er$Zone1, pred_val=res1)
+d <- melt(pred_reg, id.vars = "time")
 p <- ggplot(d, aes(x=time, y=value, color=variable)) + geom_point(size=1) + geom_line()
-p + labs(title="Zone 1 Power Consumption: monthly",
+p + labs(title="Zone 1 Power Consumption",
         x ="Time", y = "Watt Hours")
 ```
 
 
 ```{r}
-smape(lm_res, test_er$Zone1)
+smape(res1, test_er$Zone1)
 time1 <- time_end-time_sta
 time1
 ```
 
+### Using Temperature & hour
+```{r}
+time_sta <- Sys.time()
+temp_xreg <- as.matrix(train_er[,c("Temperature","hour")])
+reg_model2 <- forecast::auto.arima(train_er$Zone1, xreg=temp_xreg)
+reg_model2
+time_end <- Sys.time()
+```
+```{r}
+temp_xreg <- as.matrix(test_er[,c("Temperature","hour")])
+res2 <- forecast(reg_model2,h=nrow(test_er),xreg = temp_xreg)$mean
+```
+
+#### check residuals
+```{r}
+checkresiduals(reg_model2)
+```
+
+```{r}
+smape(res2, test_er$Zone1)
+time2 <- time_end-time_sta
+time2
+```
 
 
+```{r}
+pred_lm_monthly <- data.table(time=test_er$DateTime, test_val=test_er$Zone1, pred_val=res2)
+d <- melt(pred_lm_monthly, id.vars = "time")
+p <- ggplot(d, aes(x=time, y=value, color=variable)) + geom_point(size=1) + geom_line()
+p + labs(title="Zone 1 Power Consumption",
+        x ="Time", y = "Watt Hours")
+```
 
 
+### Using "Temperature","hour","wday"
+```{r}
+time_sta <- Sys.time()
+temp_xreg <- as.matrix(train_er[,c("Temperature","hour","wday")])
+reg_model3 <- forecast::auto.arima(train_er$Zone1, xreg=temp_xreg)
+reg_model3
+time_end <- Sys.time()
+```
+
+```{r}
+temp_xreg <- as.matrix(test_er[,c("Temperature","hour","wday")])
+res3 <- forecast(reg_model3,h=nrow(test_er),xreg = temp_xreg)$mean
+```
+
+#### check residuals
+```{r}
+checkresiduals(reg_model3)
+```
+
+```{r}
+smape(res3, test_er$Zone1)
+time3 <- time_end-time_sta
+time3
+```
 
 
+```{r}
+pred_lm_monthly <- data.table(time=test_er$DateTime, test_val=test_er$Zone1, pred_val=res3)
+d <- melt(pred_lm_monthly, id.vars = "time")
+p <- ggplot(d, aes(x=time, y=value, color=variable)) + geom_point(size=1) + geom_line()
+p + labs(title="Zone 1 Power Consumption",
+        x ="Time", y = "Watt Hours")
+```
 
 
+## Evaluation
+```{r}
+smape(res1,test_er$Zone1)
+smape(res2,test_er$Zone1)
+smape(res3,test_er$Zone1)
 
+time1
+time2 
+time3
+```
 
-
+## Based on sMAPE results, the best-performing model is the one with only Temperature.
 
 
 
