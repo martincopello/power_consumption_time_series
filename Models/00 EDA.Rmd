@@ -33,6 +33,7 @@ library(lubridate)
 library(dplyr)
 library(lubridate)
 library(forecast)
+library(TSA)
 library(xts)
 library(zoo)
 library(Metrics)
@@ -88,6 +89,29 @@ for(i in var) {
 }
 ```
 
+
+```{r}
+#perform frequency decomposition on our data to identify the strongest frequency signal
+p <- periodogram(df$Zone1, xlim = c(0,0.06))
+max_freq <- p$freq[which.max(p$spec)]
+seasonality <- 1/max_freq
+seasonality
+```
+
+```{r}
+#now let's find the remaining top frequencies
+max_freqs <- p$freq[p$spec > 50000000000]
+max_freqs
+```
+
+As noted above, there are certain frequencies that appear. The first two frequencies are so close to zero that they bear no meaning (frequency of 0 means an event does not repeat. We may get additional insights if we could obtain several years' worth of data)
+
+```{r}
+seasonalities <- 1/max_freqs
+seasonalities
+```
+
+As mentioned previously, the first two seasonalities are associated with frequencies that are close to zero and bear no meaning. Seasonalities close to 144 are for daily seasonality (six 10-minute periods per hour times 24 = 144). Seasonalities close to 72 are for semi-daily seasonality (12 hours, six 10-minute periods per hour times 12 = 72). Seasonalities close to 48 are for 8-hour frequencies (six 10-minute periods per hour times 8 = 48.)
 
 ```{r}
 plot(df$Zone1, type = "l", xlab = "Time", ylab = "Watt Hours", main = "Power Consumption of Tetouan City", col = "#4F94CD")
